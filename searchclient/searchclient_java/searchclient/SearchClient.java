@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -52,43 +53,88 @@ public class SearchClient
         int numAgents = 0;
         int[] agentRows = new int[10];
         int[] agentCols = new int[10];
-        boolean[][] walls = new boolean[130][130];
-        char[][] boxes = new char[130][130];
-        line = serverMessages.readLine();
+        
+        int rowset = 2;
+        int colset = 3;
+        
+        boolean[][] walls = new boolean[rowset][colset];
+        char[][] boxes = new char[rowset][colset];
+       line = serverMessages.readLine();
+        
         int row = 0;
+        
         while (!line.startsWith("#"))
         {
+        	 if (row >= rowset) {
+         		rowset *= 2;
+         		boolean[][] tempWalls = new boolean[rowset][colset];
+         		char[][] tempBoxes = new char[rowset][colset];
+             	for (int r = 0; r < row; r++) {
+                 	boolean[] tempRow = walls[r];
+                 	char[] tempRowbox = boxes[r];
+                 	
+                 	tempWalls[r] = tempRow;
+                 	tempBoxes[r] = tempRowbox;
+             	}
+             	
+             	walls = tempWalls;
+             	boxes = tempBoxes;
+             }
+        	
+        	if(line.length()>=colset) {
+        		colset = line.length();
+        		boolean[][] tempWalls = new boolean[rowset][colset];
+         		char[][] tempBoxes = new char[rowset][colset];
+         		for (int r = 0; r < row; r++) {
+                 	boolean[] tempRow  = Arrays.copyOf(walls[r], line.length());
+                 	char[] tempRowBox  = Arrays.copyOf(boxes[r], line.length());
+                 	
+                 	tempWalls[r] = tempRow;
+                 	tempBoxes[r] = tempRowBox;
+             	}
+         		walls = tempWalls;
+             	boxes = tempBoxes;
+        	}
             for (int col = 0; col < line.length(); ++col)
-            {
-                char c = line.charAt(col);
+            {		
+            	char c = line.charAt(col);
 
                 if ('0' <= c && c <= '9')
                 {
                     agentRows[c - '0'] = row;
                     agentCols[c - '0'] = col;
                     ++numAgents;
+                    
                 }
                 else if ('A' <= c && c <= 'Z')
                 {
                     boxes[row][col] = c;
                 }
+                
                 else if (c == '+')
                 {
                     walls[row][col] = true;
                 }
             }
+//            for(int i = 0; i < row; i++) {
+//            	System.err.println(i);
+//         		System.err.println(walls[i][0]);
+//         	}
 
             ++row;
             line = serverMessages.readLine();
         }
+        
+        
         agentRows = Arrays.copyOf(agentRows, numAgents);
         agentCols = Arrays.copyOf(agentCols, numAgents);
 
         // Read goal state.
         // line is currently "#goal".
-        char[][] goals = new char[130][130];
+        char[][] goals = new char[rowset][colset];
         line = serverMessages.readLine();
         row = 0;
+        
         while (!line.startsWith("#"))
         {
             for (int col = 0; col < line.length(); ++col)
